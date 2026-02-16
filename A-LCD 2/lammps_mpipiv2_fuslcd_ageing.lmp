@@ -1,0 +1,331 @@
+# Multiprotein complexes
+#
+#
+###### DO NOT CHANGE #######
+units       real     # real units https://docs.lammps.org/units.html
+dimension   3        # periodic boundary conditions in the 3 dimensions
+boundary    p p p
+atom_style  full
+bond_style  harmonic # harmonic bonds between amino acids
+#angle_style harmonic # added for the reactions
+###### END NO CHANGE #######
+
+
+#read_data conf_1 extra/special/per/atom 100 extra/bond/per/atom 10 #  data.dat #  fus_finalv3.data #Data file, read the configuration
+read_restart save #  restart*.tmp
+
+#replicate 15 15 2
+#region bola sphere 600 700 2500 198
+#group in region bola
+#group out subtract all in  
+#delete_atoms group out mol yes
+
+#group borrar molecule > 200
+#delete_atoms group borrar bond yes
+#replicate 1 1 2 
+
+#group borrar_2 molecule > 200
+#delete_atoms group borrar_2 bond yes
+
+#--------  Input variables  ------#
+variable T equal 257.0  #System temperature
+variable csx equal 150 # Electrolyte solution ionic strength in mM
+variable nts equal 200000000
+#---------------------------------#
+
+#-------  Derived variables ------#
+variable cs equal (${csx}/1000)*6.022e26 # Electrolyte solution ionic strength in m^-3
+variable er equal 5321/${T}+233.76-0.9297*${T}+0.001417*${T}*${T}-0.0000008292*${T}*${T}*${T} # Relative dielectric constant of the medium
+variable bjerrum equal (1.671e-5)/(${er}*${T}) # Bjerrum length in meters
+variable debyelen equal sqrt(1/(8*3.141592*${bjerrum}*${cs})) # Debye length in meters
+variable debyelenang equal ${debyelen}*1e10 # Debye length in Angstrom
+variable kappa equal 1/${debyelenang} # Inverse of debye length in Angstrom^-1 to go to pair style command
+#----------------------------------
+
+pair_style hybrid wf/cut 25.0 yukawa ${kappa} 0.0  # Hybrid/overlay potential mixing wang-frenkel and Yukawa potential
+
+# Bond coefficients
+bond_coeff          1     9.600     3.81 
+bond_coeff          2     9.600     5.0 
+
+
+#Angle coefficients
+#angle_coeff         1     0.0001     180
+#angle_coeff         2     2.5          180
+
+
+pair_coeff * * wf/cut 0.0 0.0 1 1 0.0  # We put 0 on every aspect of the pair coefficients so we can rewrite it later.
+### Epsilon scaling
+### Globular-globular 0.7; globular-IDP sqrt(0.7) and IDP-IDP 1
+
+#         type1; type2;     epsilon; sigma; lambda; wf_cut; coulm_cut # aminoacid1 aminoacid2
+pair_coeff	*	*	wf/cut	0.58000	6.00000	1	4	18.00000   #METIONINE      METIONINE
+pair_coeff	3	3	wf/cut	4.00000	6.00000	1	4	18.00000   #METIONINE      METIONINE
+pair_coeff	5	5	wf/cut	4.00000	6.00000	1	4	18.00000   #METIONINE      GLYCINE
+pair_coeff      9       1       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff      9       9       wf/cut  0.42000 6.00000 1       4       18.00000
+pair_coeff      9       2       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff      9       4       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff      9       3       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff      9       5       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff      9       6       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff      9       7       wf/cut  0.50000 6.00000 1       4       18.00000
+pair_coeff 8 8 yukawa 35 
+
+#group     CD1 id 285:371 811:897 1337:1423 1863:1949 2389:2475 2915:3001 3441:3527 3967:4053 4493:4579 5019:5105 5545:5631 6071:6157 6597:6683 7123:7209 7649:7735 8175:8261 8701:8787 9227:9313 9753:9839 10279:10365 10805:10891 11331:11417 11857:11943 12383:12469 12909:12995 13435:13521 13961:14047 14487:14573 15013:15099 15539:15625 16065:16151 16591:16677 17117:17203 17643:17729 18169:18255 18695:18781 19221:19307 19747:19833 20273:20359 20799:20885 21325:21411 21851:21937 22377:22463 22903:22989 23429:23515 23955:24041 24481:24567 25007:25093 25533:25619 26059:26145 #26585:26671 27111:27197 27637:27723 28163:28249 28689:28775 29215:29301 29741:29827 30267:30353 30793:30879 31319:31405 31845:31931 32371:32457 32897:32983 33423:33509 33949:34035 34475:34561 35001:35087 35527:35613 36053:36139 36579:36665 37105:37191 37631:37717 38157:38243 38683:38769 39209:39295 39735:39821 40261:40347 40787:40873 41313:41399 41839:41925 42365:42451 42891:42977 43417:43503 43943:44029 44469:44555 44995:45081 45521:45607 46047:46133 46573:46659 47099:47185
+
+#group     CD2 id 422:453 948:979 1474:1505 2000:2031 2526:2557 3052:3083 3578:3609 4104:4135 4630:4661 5156:5187 5682:5713 6208:6239 6734:6765 7260:7291 7786:7817 8312:8343 8838:8869 9364:9395 9890:9921 10416:10447 10942:10973 11468:11499 11994:12025 12520:12551 13046:13077 13572:13603 14098:14129 14624:14655 15150:15181 15676:15707 16202:16233 16728:16759 17254:17285 17780:17811 18306:18337 18832:18863 19358:19389 19884:19915 20410:20441 20936:20967 21462:21493 21988:22019 22514:22545 23040:23071 23566:23597 24092:24123 24618:24649 25144:25175 25670:25701 26196:26227 #26722:26753 27248:27279 27774:27805 28300:28331 28826:28857 29352:29383 29878:29909 30404:30435 30930:30961 31456:31487 31982:32013 32508:32539 33034:33065 33560:33591 34086:34117 34612:34643 35138:35169 35664:35695 36190:36221 36716:36747 37242:37273 37768:37799 38294:38325 38820:38851 39346:39377 39872:39903 40398:40429 40924:40955 41450:41481 41976:42007 42502:42533 43028:43059 43554:43585 44080:44111 44606:44637 45132:45163 45658:45689 46184:46215 46710:46741 47236:47267
+
+#group     nonrigid subtract all CD1 CD2
+
+special_bonds fene
+neighbor  3.5 multi
+#neigh_modify  exclude molecule/intra CD1
+#neigh_modify  exclude molecule/intra CD2
+
+#neigh_modify  exclude molecule CD
+
+
+#neigh_modify  exclude molecule/intra CSD
+neigh_modify  every 10 delay 0
+
+reset_timestep 0
+comm_style    tiled
+timestep     10  #10 fs of timestep
+
+###########################################################################################################################
+## ===============================================  REACTIONS ALGORITHM  =============================================== ##
+###########################################################################################################################
+# Cutoff for the coordination of not reacted and already reacted (cross) regions. 3rd sequence has a cutoff for reversible reaction (back)
+
+#REACTION 1
+#variable catoff_coord1 equal 16.50
+#variable catoff_coord_cross1 equal 16.50
+# REACTION 2
+#variable catoff_coord2 equal 16.50
+#variable catoff_coord_cross2 equal 16.50
+# REACTION 3
+variable catoff_coord3 equal 9.75
+variable catoff_coord_cross3 equal 9.75
+variable catoff_coord_back3 equal 18.00
+# REACTION 4
+variable catoff_coord4 equal 9.75
+variable catoff_coord_cross4 equal 9.75
+variable catoff_coord_back4 equal 18.00
+
+
+### SET THE ATOM GROUPS FOR EACH REACTION
+#variable ccin atom "type == 45"
+#group cuarcin dynamic all var ccin every 10
+#variable csie atom "type == 47"
+#group cuarsie dynamic all var csie every 10
+variable cnue atom "type == 2"
+group cuarnue dynamic all var cnue every 10
+variable cinc atom "type == 3"
+group cincuentuno dynamic all var cinc every 10
+group milyun dynamic all var cinc every 1001
+#group diferencia dynamic all subtract cincuentuno milyun every 10
+
+variable cuat atom "type == 4"
+group cuatro dynamic all var cuat every 10
+variable cinco atom "type == 5"
+group chinque dynamic all var cinco every 10
+group milydos dynamic all var cinco every 1001
+
+variable seis atom "type == 6"
+group seises dynamic all var seis every 10
+variable siete atom "type == 7"
+group sietes dynamic all var siete every 10
+############## COMPUTE THE COORDINATION  ###############
+# REACTION 1
+#compute 2 cuarcin    coord/atom cutoff ${catoff_coord1} 45
+#compute 3 cuarcin    coord/atom cutoff ${catoff_coord_cross1} 53
+#REACTION 2
+#compute 22 cuarsie    coord/atom cutoff ${catoff_coord2} 47
+#compute 23 cuarsie    coord/atom cutoff ${catoff_coord_cross2} 54
+# REACTION 3
+compute 32 cuarnue    coord/atom cutoff ${catoff_coord3} 2
+compute 33 cuarnue    coord/atom cutoff ${catoff_coord_cross3} 3
+compute 34 seises    coord/atom cutoff ${catoff_coord_back3} 6
+# REACTION 4
+compute 42 cuatro    coord/atom cutoff ${catoff_coord4} 4
+compute 43 cuatro    coord/atom cutoff ${catoff_coord_cross4} 5
+compute 44 sietes    coord/atom cutoff ${catoff_coord_back4} 7
+
+
+# REACTION 1
+#variable   coordinacion_1a atom "(c_2 > 3)"
+#variable   coordinacion_1b atom "((c_3 > 1) && (c_3 < 4) && (type == 45)) || (type==53)"
+#group highc1    dynamic all  var coordinacion_1a every 1000
+#group highc1_cross    dynamic all  var coordinacion_1b every 10
+#variable   p1  equal  "count(highc1)"
+#variable   h1  equal  "count(highc1_cross)"
+
+# REACTION 2
+#variable   coordinacion_2a atom "(c_22 > 3)"
+#variable   coordinacion_2b atom "((c_23 > 1) && (c_23 < 4) && (type == 47)) || (type==54)"
+#group highc2    dynamic all  var coordinacion_2a every 1000
+#group highc2_cross    dynamic all  var coordinacion_2b every 10
+#variable   p2  equal  "count(highc2)"
+#variable   h2  equal  "count(highc2_cross)"
+
+# REACTION 3
+variable   coordinacion_3a atom "(c_32 > 3)"
+variable   coordinacion_3b atom "((c_33 > 1) && (c_33 < 4) && (type == 2)) || (type == 3)"
+variable   coordinacion_3c atom "(c_34 < 1) && (type == 6)"
+group highc3    dynamic all  var coordinacion_3a every 1000
+group highc3_cross    dynamic all  var coordinacion_3b every 10
+group highc3_back    dynamic all  var coordinacion_3c every 100
+variable   p3  equal  "count(highc3)"
+variable   h3  equal  "count(highc3_cross)"
+variable   b3  equal  "count(highc3_back)"
+variable   count3mil equal "count(milyun)"
+variable   count3diez equal "count(cincuentuno)"
+variable comp equal "(v_count3mil == v_count3diez)"
+
+
+# REACTION 4
+variable   coordinacion_4a atom "(c_42 > 3)"
+variable   coordinacion_4b atom "((c_43 > 1) && (c_43 < 4) && (type == 4)) || (type == 5)"
+variable   coordinacion_4c atom "(c_44 < 1) && (type == 7)"
+group highc4    dynamic all  var coordinacion_4a every 1000
+group highc4_cross    dynamic all  var coordinacion_4b every 10
+group highc4_back    dynamic all  var coordinacion_4c every 100
+variable   p4  equal  "count(highc4)"
+variable   h4  equal  "count(highc4_cross)"
+variable   b4  equal  "count(highc4_back)"
+variable   count4mil equal "count(milydos)"
+variable   count4diez equal "count(chinque)" 
+variable comparacion equal "(v_count4mil == v_count4diez)"
+
+
+####################################################
+
+#### Cutoffs for the reaction to occur ####
+# REACTION 1
+#variable catoff_pure1 equal 16.0
+#variable catoff_cross1 equal 16.0
+# REACTION 2
+#variable catoff_pure2 equal 16.0
+#variable catoff_cross2 equal 16.0
+# REACTION 3
+variable catoff_pure3 equal 9.75
+variable catoff_cross3 equal 9.75
+variable catoff_back3 equal 18.0
+# REACTION 4
+variable catoff_pure4 equal 9.75
+variable catoff_cross4 equal 9.75
+variable catoff_back4 equal 18.0
+
+#####  LOAD THE REACTIONS TEMPLATES #####
+# REACTION 1
+#molecule mol1a polimer1_pre  
+#molecule mol1b polimer1_pre_cross
+#molecule mol1fin polimer1_post
+# REACTION 2
+#molecule mol2a polimer2_pre  
+#molecule mol2b polimer2_pre_cross
+#molecule mol2fin polimer2_post
+# REACTION 3
+molecule mol3a polimer3_pre
+molecule mol3b polimer3_pre_cross
+molecule mol3fin polimer3_post
+molecule mol3c polimer3_pre_back
+molecule mol3cfin polimer3_post_back
+# REACTION 4
+molecule mol4a polimer4_pre
+molecule mol4b polimer4_pre_cross
+molecule mol4fin polimer4_post
+molecule mol4c polimer4_pre_back
+molecule mol4cfin polimer4_post_back
+
+##########   REACTIONS   ##########
+fix 5 all bond/react reset_mol_ids no &
+react myreact3a highc3    10 0 ${catoff_pure3} mol3a mol3fin map3  &
+react myreact3b highc3_cross    10 0 ${catoff_cross3} mol3b mol3fin map3 &
+react myreact3c highc3_back    10 0 ${catoff_back3} mol3c mol3cfin map3back &
+react myreact4a highc4    10 0 ${catoff_pure4} mol4a mol4fin map4  &
+react myreact4b highc4_cross    10 0 ${catoff_cross4} mol4b mol4fin map4 &
+react myreact4c highc4_back    10 0 ${catoff_back4} mol4c mol4cfin map4back
+###############################################################################################################
+## ======================================= END OF REACTIONS ALGORITHM ====================================== ##
+###############################################################################################################
+
+
+velocity      all create ${T} 112113
+#fix           fxrig1  CD rigid/nvt molecule temp 300 300 100.0
+
+#FULL FUS
+#fix           fxnve   nonrigid   nve
+#fix           fxnverigid1 CD1 rigid/nvt molecule temp ${T} ${T} 5000.0
+#fix           fxnverigid2 CD2 rigid/nvt molecule temp ${T} ${T} 5000.0
+#fix           fxlange nonrigid  langevin ${T} ${T} 5000.0 32784
+
+#fix           fxnpt   all  press/berendsen iso 0 0  5000.0 dilate all
+#END FULL FUS
+
+#LCDS
+fix 23 all nvt temp ${T} ${T} 5000.0 #iso 4 4 5000.1
+#
+
+
+#fix           fixcentro all recenter INIT INIT INIT
+fix           fxbal  all balance 1000 1.05 rcb
+
+
+########   COMPUTE RESULTS  #######
+## Radius
+compute k all gyration
+compute cc1 all chunk/atom molecule
+compute radio all gyration/chunk cc1
+variable media_radio equal ave(c_radio)
+fix ex all print 100000 "${media_radio}" file gyration.out screen no
+fix radio  all ave/time 100000 1 100000 c_radio file radio.out mode vector
+
+### Density profilecompute densidad all chunk/atom bin/1d z lower 1
+compute densidad all chunk/atom bin/1d z lower 1
+fix 3 all ave/chunk 200000 1 200000 densidad density/mass file density.profile
+#######################################
+
+###Test if antes de run
+#if "${count3} == ${count3din}" then &
+#	"print 'Son iguales'" &
+#else &
+#	"print 'Son distintos'"
+###
+
+dump        1 all custom 100000 result.lammpstrj id mol type q xu yu zu
+dump_modify   1 sort id
+
+dump 2 cincuentuno custom 1000 result3.lammpstrj id mol type q xu yu zu
+dump_modify 2 sort id skip v_comp
+
+dump 3 all custom 1000 result3_all.lammpstrj id mol type q xu yu zu
+dump_modify 3 sort id skip v_comp
+
+dump 4 chinque custom 1000 result5.lammpstrj id mol type q xu yu zu
+dump_modify 4 sort id skip v_comparacion
+
+dump 5 all custom 1000 result5_all.lammpstrj id mol type q xu yu zu
+dump_modify 5 sort id skip v_comparacion 
+
+
+
+thermo        1000
+#                                                                                                 pure1  cross1  ?    ?    pure2  cross2  ?     ?  pure3  cross3  back3  ?    ?    ?
+thermo_style  custom step pe ebond ecoul epair press ke temp lx ly lz pxx pyy pzz  spcpu density f_5[1] f_5[2] f_5[3] f_5[4] f_5[5] f_5[6] v_p3 v_p4 v_comp #f_5[5] f_5[6] f_5[7] v_p3 v_h3 v_b3 #c_red v_50 #v_catoff_coord_back3 #c_23[2] 
+thermo_modify flush yes
+
+restart       1000000 restart.tmp #restart2.tmp
+#run    20000
+#minimize 1.0e-4 1.0e-6 100 1000
+#write_data afterminimize
+write_data initial_conf nocoeff
+run           ${nts}
+write_data final.data
+
+
+#if "${count3} == ${count3din}" then &
+#	"print 'Son iguales'" &
+#else &
+#	"print 'Son distintos'"
