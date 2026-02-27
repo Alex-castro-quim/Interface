@@ -1,1 +1,3 @@
 In this folder, all the relevant information to run our ageing simulations for the homopolymer model will be uploaded
+
+It is important to note that to obtain all the ageing location results, we developed an algorithm that track the reactions from lammps, we will call it Roulette Algorithm™
